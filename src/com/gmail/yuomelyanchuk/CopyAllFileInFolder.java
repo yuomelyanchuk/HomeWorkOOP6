@@ -2,7 +2,10 @@ package com.gmail.yuomelyanchuk;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.concurrent.FutureTask;
+import java.util.concurrent.Executors;
+import java.util.ArrayList;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
 
 public class CopyAllFileInFolder {
 	private String sourceFolder = "";
@@ -20,19 +23,18 @@ public class CopyAllFileInFolder {
 		f = new File(sourceFolder);
 		File[] fileList = f.listFiles();
 		File dest = new File(destFolder);
-		if (dest.isDirectory()) {
+		ExecutorService exSer = Executors.newFixedThreadPool(4);
+		if (dest.isDirectory()) {			
+			ArrayList<Callable<Boolean>> tasks = new ArrayList<>();
 			for (File file : fileList) {			
 				File toFile= new File(dest.getAbsolutePath()+"\\"+file.getName());
+				tasks.add(new FileCopy(file, toFile));
 				try{
-				toFile.createNewFile();				
-				if (file.isFile()) {
-					FutureTask<Boolean> res = new FutureTask<>(	new FileCopy(file, toFile));
-					Thread thread = new Thread(res);					
-					thread.start();
+					exSer.invokeAll(tasks);
+				}catch (InterruptedException e1) {
+					e1.printStackTrace();
 				}
-				}catch (IOException e) {
-					e.printStackTrace();
-				}
+
 			}
 		}
 
